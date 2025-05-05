@@ -1,32 +1,36 @@
-import { NextResponse } from "next/server"
-import { getCompanies, createCompany } from "@/lib/db"
-import { mockCompanies } from "@/lib/mock-data"
+import { NextResponse } from "next/server";
+import prisma from "@/lib/db";
 
+// GET /api/companies
 export async function GET() {
   try {
-    // Try to get companies from the database
-    const companies = await getCompanies()
-    return NextResponse.json(companies)
+    const companies = await prisma.company.findMany();
+    return NextResponse.json(companies);
   } catch (error) {
-    console.error("Error fetching companies from database:", error)
-
-    // If in development mode, return mock data as fallback
-    if (process.env.NODE_ENV === "development") {
-      console.log("Using mock data as fallback")
-      return NextResponse.json(mockCompanies)
-    }
-
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error("❌ Error fetching companies:", error);
+    return NextResponse.json({ error: "Failed to load companies" }, { status: 500 });
   }
 }
 
+// POST /api/companies
 export async function POST(request) {
   try {
-    const data = await request.json()
-    const company = await createCompany(data)
-    return NextResponse.json(company)
+    const data = await request.json();
+
+    if (!data.name) {
+      return NextResponse.json({ error: "Company name is required" }, { status: 400 });
+    }
+
+    const newCompany = await prisma.company.create({
+      data: {
+        name: data.name,
+        active: data.active ?? true,
+      },
+    });
+
+    return NextResponse.json(newCompany);
   } catch (error) {
-    console.error("Error creating company:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error("❌ Error creating company:", error);
+    return NextResponse.json({ error: "Failed to create company" }, { status: 500 });
   }
 }

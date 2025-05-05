@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  active    Boolean   @default(true)
+  plans     Plan[]
+  questions Question[]
+}
+
+model Plan {
+  id          Int               @id @default(autoincrement())
+  name        String
+  planType    String
+  active      Boolean
+  company     Company           @relation(fields: [companyId], references: [id])
+  companyId   Int
+  rules       EligibilityRule[]
+}
+
+model Question {
+  id         Int      @id @default(autoincrement())
+  text       String
+  active     Boolean
+  company    Company  @relation(fields: [companyId], references: [id])
+  companyId  Int
+}
+
+model HealthCondition {
+  id           Int     @id @default(autoincrement())
+  name         String
+  active       Boolean
+  tags         Json    // ["chronic", "manageable"]
+  alternatives Json    // ["Diet", "Exercise"]
+}
+
+model Medication {
+  id           Int     @id @default(autoincrement())
+  name         String
+  active       Boolean
+  tags         Json
+  alternatives Json
+}
+
+model EligibilityRule {
+  id          Int     @id @default(autoincrement())
+  plan        Plan    @relation(fields: [planId], references: [id])
+  planId      Int
+  ruleType    String  // 'condition', 'medication', 'question'
+  entityId    Int
+  ruleAction  String  // 'block_if_yes', etc.
+  description String
+  active      Boolean
+}
