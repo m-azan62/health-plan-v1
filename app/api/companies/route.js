@@ -1,36 +1,32 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { NextResponse } from "next/server"
+import { query } from "@/lib/db"
 
-// GET /api/companies
 export async function GET() {
   try {
-    const companies = await prisma.company.findMany();
-    return NextResponse.json(companies);
+    const result = await query("SELECT * FROM company")
+    return NextResponse.json(result.rows)
   } catch (error) {
-    console.error("❌ Error fetching companies:", error);
-    return NextResponse.json({ error: "Failed to load companies" }, { status: 500 });
+    console.error("❌ Error fetching companies:", error)
+    return NextResponse.json({ error: "Failed to load companies" }, { status: 500 })
   }
 }
 
-// POST /api/companies
 export async function POST(request) {
   try {
-    const data = await request.json();
+    const data = await request.json()
 
     if (!data.name) {
-      return NextResponse.json({ error: "Company name is required" }, { status: 400 });
+      return NextResponse.json({ error: "Company name is required" }, { status: 400 })
     }
 
-    const newCompany = await prisma.company.create({
-      data: {
-        name: data.name,
-        active: data.active ?? true,
-      },
-    });
+    const result = await query(
+      "INSERT INTO company (name, active) VALUES ($1, $2) RETURNING *",
+      [data.name, data.active ?? true]
+    )
 
-    return NextResponse.json(newCompany);
+    return NextResponse.json(result.rows[0])
   } catch (error) {
-    console.error("❌ Error creating company:", error);
-    return NextResponse.json({ error: "Failed to create company" }, { status: 500 });
+    console.error("❌ Error creating company:", error)
+    return NextResponse.json({ error: "Failed to create company" }, { status: 500 })
   }
 }
