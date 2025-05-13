@@ -3,7 +3,7 @@ import { query } from "@/lib/db"
 
 export async function GET() {
   try {
-    const result = await query("SELECT * FROM company")
+    const result = await query("SELECT * FROM \"Company\"")
     return NextResponse.json(result.rows)
   } catch (error) {
     console.error("❌ Error fetching companies:", error)
@@ -20,7 +20,7 @@ export async function POST(request) {
     }
 
     const result = await query(
-      "INSERT INTO company (name, active) VALUES ($1, $2) RETURNING *",
+      "INSERT INTO \"Company\" (name, active) VALUES ($1, $2) RETURNING *",
       [data.name, data.active ?? true]
     )
 

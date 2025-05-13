@@ -8,42 +8,53 @@ datasource db {
 }
 
 model Company {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  active    Boolean   @default(true)
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  active    Boolean    @default(true)
   plans     Plan[]
   questions Question[]
 }
 
 model Plan {
-  id          Int               @id @default(autoincrement())
-  name        String
-  planType    String
-  active      Boolean
-  company     Company           @relation(fields: [companyId], references: [id])
-  companyId   Int
-  rules       EligibilityRule[]
+  id         Int               @id @default(autoincrement())
+  name       String
+  planType   PlanType          @relation(fields: [planTypeId], references: [id])
+  planTypeId Int
+  active     Boolean
+  company    Company           @relation(fields: [companyId], references: [id])
+  companyId  Int
+  rules      EligibilityRule[]
+  planStates PlanState[] // ✅ This is the missing reverse relation
+}
+
+model PlanState {
+  id      Int    @id @default(autoincrement())
+  plan    Plan   @relation(fields: [planId], references: [id])
+  planId  Int
+  stateId String
 }
 
 model Question {
-  id         Int      @id @default(autoincrement())
-  text       String
-  active     Boolean
-  company    Company  @relation(fields: [companyId], references: [id])
-  companyId  Int
+  id        Int     @id @default(autoincrement())
+  text      String
+  active    Boolean
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId Int
 }
 
 model HealthCondition {
   id           Int     @id @default(autoincrement())
   name         String
+  description  String
   active       Boolean
-  tags         Json    // ["chronic", "manageable"]
-  alternatives Json    // ["Diet", "Exercise"]
+  tags         Json
+  alternatives Json
 }
 
 model Medication {
   id           Int     @id @default(autoincrement())
   name         String
+  description  String
   active       Boolean
   tags         Json
   alternatives Json
@@ -53,9 +64,20 @@ model EligibilityRule {
   id          Int     @id @default(autoincrement())
   plan        Plan    @relation(fields: [planId], references: [id])
   planId      Int
-  ruleType    String  // 'condition', 'medication', 'question'
-  entityId    Int
-  ruleAction  String  // 'block_if_yes', etc.
+  ruleType    String // 'condition', 'medication', 'question'
+  entityId    Int // id of the condition, medication, or question
+  ruleAction  String // e.g., 'block_if_yes'
   description String
   active      Boolean
+}
+
+model State {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+}
+
+model PlanType {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  plans Plan[]
 }

@@ -4,12 +4,12 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   Sidebar,
+  SidebarProvider,
+  SidebarHeader,
   SidebarContent,
   SidebarFooter,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { SidebarMenuButton } from "@/components/ui/sidebar-menu-button" // Ensure this exists

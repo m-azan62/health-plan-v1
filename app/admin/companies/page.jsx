@@ -1,9 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { SidebarNav } from "@/components/sidebar-nav"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
@@ -14,152 +20,191 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react"
-import { adminNavItems } from "@/lib/navigation"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table"
+import {
+  LayoutDashboard,
+  Building2,
+  FileText,
+  Stethoscope,
+  Pill,
+  HelpCircle,
+  ShieldCheck,
+  Plus,
+  Pencil,
+  Trash2
+} from "lucide-react"
+
+const adminNavItems = [
+  { title: "Dashboard", href: "/admin/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
+  { title: "Companies", href: "/admin/companies", icon: <Building2 className="h-5 w-5" /> },
+  { title: "Plans", href: "/admin/plans", icon: <FileText className="h-5 w-5" /> },
+  { title: "Health Conditions", href: "/admin/conditions", icon: <Stethoscope className="h-5 w-5" /> },
+  { title: "Medications", href: "/admin/medications", icon: <Pill className="h-5 w-5" /> },
+  { title: "Questions", href: "/admin/questions", icon: <HelpCircle className="h-5 w-5" /> },
+  { title: "Eligibility Rules", href: "/admin/rules", icon: <ShieldCheck className="h-5 w-5" /> },
+]
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState([])
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [currentCompany, setCurrentCompany] = useState(null)
-  const [newCompany, setNewCompany] = useState({ name: "", active: true })
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [companyForm, setCompanyForm] = useState({ id: null, name: "", active: true })
 
   useEffect(() => {
-    async function loadCompanies() {
-      try {
-        setError(null)
-        setIsLoading(true)
-
-        const timeoutId = setTimeout(() => {
-          setIsLoading(false)
-          setError("Request timed out. Please try again.")
-        }, 10000)
-
-        const response = await fetch("/api/companies")
-        clearTimeout(timeoutId)
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.error || `Server responded with status: ${response.status}`)
-        }
-
-        const data = await response.json()
-        setCompanies(data)
-      } catch (error) {
-        console.error("Error loading companies:", error)
-        setError(error.message || "Failed to load companies. Please try again.")
-      } finally {
-        setIsLoading(false)
-      }
+    async function fetchCompanies() {
+      setLoading(true)
+      const res = await fetch("/api/companies")
+      const data = await res.json()
+      setCompanies(data)
+      setLoading(false)
     }
-
-    loadCompanies()
+    fetchCompanies()
   }, [])
 
-  const handleAddCompany = async () => {
-    try {
-      setIsSubmitting(true)
-      setError(null)
+  const handleSubmit = async () => {
+    const method = editMode ? "PUT" : "POST"
+    const url = editMode ? `/api/companies/${companyForm.id}` : "/api/companies"
 
-      const response = await fetch("/api/companies", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newCompany),
-      })
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(companyForm),
+    })
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `Server responded with status: ${response.status}`)
-      }
-
-      const company = await response.json()
-      setCompanies([...companies, company])
-      setNewCompany({ name: "", active: true })
-      setIsAddDialogOpen(false)
-    } catch (error) {
-      console.error("Error adding company:", error)
-      setError(error.message || "Failed to add company. Please try again.")
-    } finally {
-      setIsSubmitting(false)
+    const result = await res.json()
+    if (editMode) {
+      setCompanies((prev) => prev.map((c) => (c.id === result.id ? result : c)))
+    } else {
+      setCompanies((prev) => [...prev, result])
     }
+
+    setCompanyForm({ id: null, name: "", active: true })
+    setEditMode(false)
+    setDialogOpen(false)
   }
 
-  const handleEditCompany = async () => {
-    try {
-      setIsSubmitting(true)
-      setError(null)
-
-      const response = await fetch(`/api/companies/${currentCompany.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(currentCompany),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `Server responded with status: ${response.status}`)
-      }
-
-      const updated = await response.json()
-      setCompanies(companies.map((c) => (c.id === currentCompany.id ? updated : c)))
-      setIsEditDialogOpen(false)
-    } catch (error) {
-      console.error("Error updating company:", error)
-      setError(error.message || "Failed to update company. Please try again.")
-    } finally {
-      setIsSubmitting(false)
-    }
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this company?")) return
+    await fetch(`/api/companies/${id}`, { method: "DELETE" })
+    setCompanies((prev) => prev.filter((c) => c.id !== id))
   }
 
-  const handleDeleteCompany = async (id) => {
-    if (confirm("Are you sure you want to delete this company? This action cannot be undone.")) {
-      try {
-        setError(null)
-        const response = await fetch(`/api/companies/${id}`, { method: "DELETE" })
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.error || `Server responded with status: ${response.status}`)
-        }
-
-        setCompanies(companies.filter((c) => c.id !== id))
-      } catch (error) {
-        console.error("Error deleting company:", error)
-        setError(error.message || "Failed to delete company. Please try again.")
-      }
-    }
-  }
-
-  const checkApiStatus = async () => {
-    try {
-      setError(null)
-      setIsLoading(true)
-      const response = await fetch("/api/db-status")
-      const data = await response.json()
-      alert(JSON.stringify(data, null, 2))
-    } catch (error) {
-      console.error("Error checking API status:", error)
-      setError(error.message || "Failed to check API status")
-    } finally {
-      setIsLoading(false)
-    }
+  const openEditDialog = (company) => {
+    setCompanyForm(company)
+    setEditMode(true)
+    setDialogOpen(true)
   }
 
   return (
     <SidebarNav items={adminNavItems} title="Admin">
-      {/* UI components preserved as-is */}
-      {/* No TypeScript-specific syntax, safe to use directly */}
+      <div className="w-full px-6 py-8">
+        <Card className="w-full max-w-[1600px] mx-auto border rounded-lg shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Companies</CardTitle>
+              <CardDescription>Manage the insurance companies listed in the system</CardDescription>
+            </div>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  onClick={() => {
+                    setEditMode(false)
+                    setCompanyForm({ id: null, name: "", active: true })
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Company
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editMode ? "Edit Company" : "Add Company"}</DialogTitle>
+                  <DialogDescription>
+                    {editMode
+                      ? "Update the selected company."
+                      : "Enter details for the new company."}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Company Name</Label>
+                    <Input
+                      id="name"
+                      value={companyForm.name}
+                      onChange={(e) =>
+                        setCompanyForm({ ...companyForm, name: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="active"
+                      checked={companyForm.active}
+                      onCheckedChange={(checked) =>
+                        setCompanyForm({ ...companyForm, active: checked })
+                      }
+                    />
+                    <Label htmlFor="active">Active</Label>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={handleSubmit}>Save</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <p>Loading companies...</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {companies.map((company) => (
+                    <TableRow key={company.id}>
+                      <TableCell>{company.name}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          company.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        }`}>
+                          {company.active ? "Active" : "Inactive"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(company)}>
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(company.id)}>
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </SidebarNav>
   )
 }

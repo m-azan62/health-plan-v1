@@ -1,46 +1,46 @@
-import { NextResponse } from "next/server"
-import { getCompanyById, updateCompany, deleteCompany } from "@/lib/db"
+import { NextResponse } from "next/server";
+import { query } from "@/lib/db";
 
-export async function GET(request, { params }) {
+// Update a company
+export async function PUT(request, context) {
+  const { id } = await context.params;
+  const companyId = parseInt(id);
+
+  const body = await request.json();
+  const { name, active } = body;
+
   try {
-    const id = params.id
-    const company = await getCompanyById(id)
+    const result = await query(
+      `UPDATE "Company"
+       SET name = $1, active = $2
+       WHERE id = $3
+       RETURNING id, name, active`,
+      [name, active ?? true, companyId]
+    );
 
-    if (!company) {
-      return NextResponse.json({ error: "Company not found" }, { status: 404 })
-    }
-
-    return NextResponse.json(company)
+    // Convert result rows to plain JSON-safe values
+    const updatedCompany = result.rows[0];
+    return NextResponse.json({
+      id: updatedCompany.id,
+      name: updatedCompany.name,
+      active: updatedCompany.active
+    });
   } catch (error) {
-    console.error("Error fetching company:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error("❌ Error updating company:", error);
+    return NextResponse.json({ error: "Failed to update company" }, { status: 500 });
   }
 }
 
-export async function PUT(request, { params }) {
+// Delete a company
+export async function DELETE(request, context) {
+  const { id } = await context.params;
+  const companyId = parseInt(id);
+
   try {
-    const id = params.id
-    const data = await request.json()
-    const company = await updateCompany(id, data)
-
-    if (!company) {
-      return NextResponse.json({ error: "Company not found" }, { status: 404 })
-    }
-
-    return NextResponse.json(company)
+    await query(`DELETE FROM "Company" WHERE id = $1`, [companyId]);
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error updating company:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-}
-
-export async function DELETE(request, { params }) {
-  try {
-    const id = params.id
-    await deleteCompany(id)
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error("Error deleting company:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error("❌ Error deleting company:", error);
+    return NextResponse.json({ error: "Failed to delete company" }, { status: 500 });
   }
 }

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { LayoutDashboard, Building2, FileText, Stethoscope, Pill, HelpCircle, ShieldCheck, Plus, Pencil, Trash2 } from "lucide-react"
 import PlanTypeManager from "@/components/PlanTypeManager"
@@ -66,18 +66,17 @@ export default function PlansPage() {
 
   return (
     <SidebarNav items={adminNavItems} title="Admin">
+      {/* Main Plans Section */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Plans</CardTitle>
-            <CardDescription>Manage insurance plans, plan types, and states</CardDescription>
+            <CardDescription>Manage insurance plans, types, and availability</CardDescription>
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" /> Add Plan
             </Button>
-            <PlanTypeManager />
-            <StateManager />
           </div>
         </CardHeader>
         <CardContent>
@@ -119,6 +118,7 @@ export default function PlansPage() {
         </CardContent>
       </Card>
 
+      {/* Add Plan Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -182,6 +182,12 @@ export default function PlansPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ↓↓↓ Additional Containers Below Main Plan Table ↓↓↓ */}
+      <div className="mt-12 space-y-12">
+        <PlanTypeManager />
+        <StateManager />
+      </div>
     </SidebarNav>
   )
 }
