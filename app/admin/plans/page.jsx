@@ -7,9 +7,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { LayoutDashboard, Building2, FileText, Stethoscope, Pill, HelpCircle, ShieldCheck, Plus, Pencil, Trash2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table"
+import {
+  LayoutDashboard,
+  Building2,
+  FileText,
+  Stethoscope,
+  Pill,
+  HelpCircle,
+  ShieldCheck,
+  Plus,
+  Pencil,
+  Trash2
+} from "lucide-react"
 import PlanTypeManager from "@/components/PlanTypeManager"
 import StateManager from "@/components/StateManager"
 
@@ -29,7 +54,13 @@ export default function PlansPage() {
   const [states, setStates] = useState([])
   const [planTypes, setPlanTypes] = useState([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [newPlan, setNewPlan] = useState({ name: "", companyId: "", planType: "", stateIds: [], active: true })
+  const [newPlan, setNewPlan] = useState({
+    name: "",
+    companyId: "",
+    planTypeId: "",
+    stateIds: [],
+    active: true,
+  })
 
   useEffect(() => {
     async function fetchData() {
@@ -37,7 +68,7 @@ export default function PlansPage() {
         fetch("/api/plans"),
         fetch("/api/companies"),
         fetch("/api/states"),
-        fetch("/api/plan-types")
+        fetch("/api/plan-types"),
       ])
       setPlans(await plansRes.json())
       setCompanies(await companiesRes.json())
@@ -48,14 +79,38 @@ export default function PlansPage() {
   }, [])
 
   const handleAddPlan = async () => {
+    const { name, companyId, planTypeId } = newPlan
+
+    // Basic validation
+    if (!name || !companyId || !planTypeId) {
+      alert("Please fill in all required fields: Plan Name, Company, and Plan Type.")
+      return
+    }
+
+    const payload = {
+      ...newPlan,
+      companyId: parseInt(newPlan.companyId),
+      planTypeId: parseInt(newPlan.planTypeId),
+    }
+
+    console.log("📥 Sending payload:", payload)
+
     const res = await fetch("/api/plans", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newPlan),
+      body: JSON.stringify(payload),
     })
+
+    if (!res.ok) {
+      const err = await res.json()
+      console.error("❌ Error creating plan:", err)
+      alert("Failed to create plan.")
+      return
+    }
+
     const created = await res.json()
     setPlans([...plans, created])
-    setNewPlan({ name: "", companyId: "", planType: "", stateIds: [], active: true })
+    setNewPlan({ name: "", companyId: "", planTypeId: "", stateIds: [], active: true })
     setIsAddDialogOpen(false)
   }
 
@@ -72,13 +127,9 @@ export default function PlansPage() {
             <CardTitle>Plans</CardTitle>
             <CardDescription>Manage insurance plans, plan types, and states</CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" /> Add Plan
-            </Button>
-            <PlanTypeManager />
-            <StateManager />
-          </div>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Add Plan
+          </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -97,14 +148,14 @@ export default function PlansPage() {
                 <TableRow key={plan.id}>
                   <TableCell>{plan.name}</TableCell>
                   <TableCell>{companies.find((c) => c.id === plan.companyId)?.name || "-"}</TableCell>
-                  <TableCell>{plan.planType || "-"}</TableCell>
+                  <TableCell>{planTypes.find((pt) => pt.id === plan.planTypeId)?.name || "-"}</TableCell>
                   <TableCell>{plan.stateIds?.length || 0} states</TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${plan.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                       {plan.active ? "Active" : "Inactive"}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-2">
                     <Button variant="ghost" size="icon">
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -128,11 +179,20 @@ export default function PlansPage() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Plan Name</Label>
-              <Input id="name" value={newPlan.name} onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })} />
+              <Input
+                id="name"
+                value={newPlan.name}
+                onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="companyId">Company</Label>
-              <select id="companyId" value={newPlan.companyId} onChange={(e) => setNewPlan({ ...newPlan, companyId: e.target.value })} className="border rounded px-3 py-2">
+              <select
+                id="companyId"
+                value={newPlan.companyId}
+                onChange={(e) => setNewPlan({ ...newPlan, companyId: e.target.value })}
+                className="border rounded px-3 py-2"
+              >
                 <option value="">Select Company</option>
                 {companies.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -140,17 +200,22 @@ export default function PlansPage() {
               </select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="planType">Plan Type</Label>
-              <select id="planType" value={newPlan.planType} onChange={(e) => setNewPlan({ ...newPlan, planType: e.target.value })} className="border rounded px-3 py-2">
+              <Label htmlFor="planTypeId">Plan Type</Label>
+              <select
+                id="planTypeId"
+                value={newPlan.planTypeId}
+                onChange={(e) => setNewPlan({ ...newPlan, planTypeId: e.target.value })}
+                className="border rounded px-3 py-2"
+              >
                 <option value="">Select Type</option>
                 {planTypes.map((t) => (
-                  <option key={t.id} value={t.name}>{t.name}</option>
+                  <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
               </select>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="stateIds">States</Label>
-              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded p-2">
                 {states.map((s) => (
                   <label key={s.id} className="flex items-center gap-2">
                     <input
@@ -172,7 +237,13 @@ export default function PlansPage() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Switch id="active" checked={newPlan.active} onCheckedChange={(checked) => setNewPlan({ ...newPlan, active: checked })} />
+              <Switch
+                id="active"
+                checked={newPlan.active}
+                onCheckedChange={(checked) =>
+                  setNewPlan({ ...newPlan, active: checked })
+                }
+              />
               <Label htmlFor="active">Active</Label>
             </div>
           </div>
@@ -182,6 +253,28 @@ export default function PlansPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Plan Type Manager Section */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Plan Types</CardTitle>
+          <CardDescription>Manage plan types (e.g. HMO, PPO, etc)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PlanTypeManager />
+        </CardContent>
+      </Card>
+
+      {/* State Manager Section */}
+      <Card className="mt-6 mb-10">
+        <CardHeader>
+          <CardTitle>States</CardTitle>
+          <CardDescription>Manage U.S. states for plan availability</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <StateManager />
+        </CardContent>
+      </Card>
     </SidebarNav>
   )
 }

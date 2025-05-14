@@ -16,14 +16,18 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json()
-    const { id, name } = body
+    const { name } = body
+
+    if (!name || typeof name !== "string") {
+      return NextResponse.json({ error: "Invalid name" }, { status: 400 })
+    }
 
     const result = await query(
-      'INSERT INTO "State" (id, name) VALUES ($1, $2) RETURNING *',
-      [id, name]
+      'INSERT INTO "State" (name) VALUES ($1) RETURNING *',
+      [name]
     )
 
-    return NextResponse.json(result.rows[0])
+    return NextResponse.json(result.rows[0], { status: 201 })
   } catch (error) {
     console.error("❌ Error creating state:", error)
     return NextResponse.json({ error: "Failed to create state" }, { status: 500 })

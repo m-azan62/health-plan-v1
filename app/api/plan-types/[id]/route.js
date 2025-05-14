@@ -2,16 +2,22 @@ import { query } from "@/lib/db"
 import { NextResponse } from "next/server"
 
 // PUT: Update PlanType
-export async function PUT(request, { params }) {
+export async function PUT(request, context) {
   try {
-    const id = parseInt(params.id)
+    const { id } = await context.params; // ✅ Await params
+    const parsedId = parseInt(id, 10)
+
     const body = await request.json()
     const { name } = body
 
     const result = await query(
       'UPDATE "PlanType" SET name = $1 WHERE id = $2 RETURNING *',
-      [name, id]
+      [name, parsedId]
     )
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: "PlanType not found" }, { status: 404 })
+    }
 
     return NextResponse.json(result.rows[0])
   } catch (error) {
@@ -21,11 +27,16 @@ export async function PUT(request, { params }) {
 }
 
 // DELETE: Delete PlanType
-export async function DELETE(_, { params }) {
+export async function DELETE(_, context) {
   try {
-    const id = parseInt(params.id)
+    const { id } = await context.params; // ✅ Await params
+    const parsedId = parseInt(id, 10)
 
-    await query('DELETE FROM "PlanType" WHERE id = $1', [id])
+    const result = await query('DELETE FROM "PlanType" WHERE id = $1 RETURNING *', [parsedId])
+
+    if (result.rowCount === 0) {
+      return NextResponse.json({ error: "PlanType not found" }, { status: 404 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

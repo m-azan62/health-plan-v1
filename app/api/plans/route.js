@@ -1,8 +1,7 @@
-// app/api/plans/route.js
 import { NextResponse } from "next/server"
 import { query } from "@/lib/db"
 
-// GET all plans
+// GET: Fetch all plans
 export async function GET() {
   try {
     const result = await query("SELECT * FROM \"Plan\" ORDER BY id DESC")
@@ -13,11 +12,20 @@ export async function GET() {
   }
 }
 
-// POST: create new plan
+// POST: Create a new plan
 export async function POST(request) {
   try {
     const { name, companyId, planTypeId, stateIds, active = true } = await request.json()
 
+    // Validation checks
+    if (!name || !companyId || !planTypeId || !stateIds || stateIds.length === 0) {
+      return NextResponse.json(
+        { error: "Please provide all necessary fields: name, companyId, planTypeId, and stateIds" },
+        { status: 400 }
+      )
+    }
+
+    // Insert the plan into the Plan table
     const result = await query(
       `INSERT INTO "Plan" (name, "companyId", "planTypeId", active)
        VALUES ($1, $2, $3, $4)
@@ -27,6 +35,7 @@ export async function POST(request) {
 
     const planId = result.rows[0].id
 
+    // Insert the associated states into the PlanState table
     if (stateIds && stateIds.length > 0) {
       await Promise.all(
         stateIds.map(stateId =>
