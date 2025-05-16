@@ -222,11 +222,21 @@ export default function PlansPage() {
                   <TableCell>
                     {Array.isArray(plan.stateIds)
                       ? plan.stateIds
-                          .map((id) => states.find((s) => s.id === id)?.id)
+                          .map((id) => {
+                            const state = states.find(
+                              (s) => s.id === Number(id)
+                            );
+                            if (!state) {
+                              console.warn("State not found for id:", id);
+                              return null;
+                            }
+                            return state.short;
+                          })
                           .filter(Boolean)
                           .join(", ")
                       : "—"}
                   </TableCell>
+
                   <TableCell>
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -242,10 +252,17 @@ export default function PlansPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                     onClick={() => setEditingPlan({ ...plan, stateIds: plan.stateIds || [] })}
+                      onClick={() => {
+                        setCurrentPlan({
+                          ...plan,
+                          stateIds: plan.stateIds || [],
+                        });
+                        setIsEditDialogOpen(true);
+                      }}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
+
                     <Button
                       variant="ghost"
                       size="icon"

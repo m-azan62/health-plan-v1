@@ -16,15 +16,16 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json()
-    const { name } = body
+    const { name, short } = body
 
-    if (!name || typeof name !== "string") {
-      return NextResponse.json({ error: "Invalid name" }, { status: 400 })
+    // Validate input
+    if (!name || typeof name !== "string" || !short || typeof short !== "string") {
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 })
     }
 
     const result = await query(
-      'INSERT INTO "State" (name) VALUES ($1) RETURNING *',
-      [name]
+      'INSERT INTO "State" (name, short) VALUES ($1, $2) RETURNING *',
+      [name, short]
     )
 
     return NextResponse.json(result.rows[0], { status: 201 })

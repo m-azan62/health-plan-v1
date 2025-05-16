@@ -1,24 +1,21 @@
-// app/api/states/[id]/route.js
 import { query } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 // PUT: Update a state
-export async function PUT(request, { params }) {
+export async function PUT(request, context) {
   try {
-    const { id } = await params; // ✅ Await params correctly
-    const parsedId = parseInt(id); // Ensure ID is parsed to integer
+    const { id } = await context.params;
+    const parsedId = parseInt(id);
     const body = await request.json();
-    const { name } = body;
+    const { name, short } = body;
 
-    // Validate that name is provided
-    if (!name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    if (!name || !short) {
+      return NextResponse.json({ error: "Name and short are required" }, { status: 400 });
     }
 
-    // Update the state in the database
     const result = await query(
-      'UPDATE "State" SET name = $1 WHERE id = $2 RETURNING *',
-      [name, parsedId]
+      'UPDATE "State" SET name = $1, short = $2 WHERE id = $3 RETURNING *',
+      [name, short, parsedId]
     );
 
     return NextResponse.json(result.rows[0]);
@@ -29,12 +26,11 @@ export async function PUT(request, { params }) {
 }
 
 // DELETE: Delete a state
-export async function DELETE(_, { params }) {
+export async function DELETE(_, context) {
   try {
-    const { id } = await params; // ✅ Await params correctly
-    const parsedId = parseInt(id); // Ensure ID is parsed to integer
+    const { id } = await context.params;
+    const parsedId = parseInt(id);
 
-    // Delete the state from the database
     await query('DELETE FROM "State" WHERE id = $1', [parsedId]);
 
     return NextResponse.json({ success: true });

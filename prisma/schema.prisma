@@ -15,6 +15,19 @@ model Company {
   questions Question[]
 }
 
+model PlanType {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  plans Plan[]
+}
+
+model State {
+  id         Int         @id @default(autoincrement())
+  name       String      @unique
+  short      String      @unique
+  planStates PlanState[] // reverse relation to PlanState
+}
+
 model Plan {
   id         Int               @id @default(autoincrement())
   name       String
@@ -24,14 +37,15 @@ model Plan {
   company    Company           @relation(fields: [companyId], references: [id])
   companyId  Int
   rules      EligibilityRule[]
-  planStates PlanState[] // ✅ This is the missing reverse relation
+  planStates PlanState[] // reverse relation to PlanState
 }
 
 model PlanState {
-  id      Int    @id @default(autoincrement())
-  plan    Plan   @relation(fields: [planId], references: [id])
+  id      Int   @id @default(autoincrement())
+  plan    Plan  @relation(fields: [planId], references: [id], onDelete: Cascade)
   planId  Int
-  stateId String
+  state   State @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  stateId Int
 }
 
 model Question {
@@ -69,15 +83,4 @@ model EligibilityRule {
   ruleAction  String // e.g., 'block_if_yes'
   description String
   active      Boolean
-}
-
-model State {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-}
-
-model PlanType {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
-  plans Plan[]
 }

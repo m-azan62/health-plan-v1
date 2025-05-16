@@ -1,4 +1,3 @@
-// components/StateManager.jsx
 "use client"
 
 import { useEffect, useState } from "react"
@@ -29,8 +28,8 @@ export default function StateManager() {
   const [loading, setLoading] = useState(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [newState, setNewState] = useState({ id: "", name: "" })
-  const [editState, setEditState] = useState({ id: "", name: "" })
+  const [newState, setNewState] = useState({ name: "", short: "" })
+  const [editState, setEditState] = useState({ id: "", name: "", short: "" })
 
   useEffect(() => {
     async function fetchStates() {
@@ -51,7 +50,7 @@ export default function StateManager() {
     })
     const saved = await res.json()
     setStates((prev) => [...prev, saved])
-    setNewState({ id: "", name: "" })
+    setNewState({ name: "", short: "" })
     setIsAddDialogOpen(false)
   }
 
@@ -59,7 +58,7 @@ export default function StateManager() {
     const res = await fetch(`/api/states/${editState.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editState),
+      body: JSON.stringify({ name: editState.name, short: editState.short }),
     })
     const updated = await res.json()
     setStates((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
@@ -86,12 +85,12 @@ export default function StateManager() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New State</DialogTitle>
-              <DialogDescription>Provide a unique ID (e.g., CA) and name.</DialogDescription>
+              <DialogDescription>Provide the name and short code (e.g., CA).</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label>ID (e.g., CA)</Label>
-                <Input value={newState.id} onChange={(e) => setNewState({ ...newState, id: e.target.value })} />
+                <Label>Short Code (e.g., CA)</Label>
+                <Input value={newState.short} onChange={(e) => setNewState({ ...newState, short: e.target.value })} />
               </div>
               <div className="grid gap-2">
                 <Label>Name</Label>
@@ -112,6 +111,7 @@ export default function StateManager() {
               <TableRow>
                 <TableHead>ID</TableHead>
                 <TableHead>Name</TableHead>
+                <TableHead>Short</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -120,12 +120,13 @@ export default function StateManager() {
                 <TableRow key={state.id}>
                   <TableCell>{state.id}</TableCell>
                   <TableCell>{state.name}</TableCell>
+                  <TableCell>{state.short}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Dialog
                       open={isEditDialogOpen && editState.id === state.id}
                       onOpenChange={(open) => {
                         setIsEditDialogOpen(open)
-                        if (!open) setEditState({ id: "", name: "" })
+                        if (!open) setEditState({ id: "", name: "", short: "" })
                       }}
                     >
                       <DialogTrigger asChild>
@@ -136,14 +137,21 @@ export default function StateManager() {
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Edit State</DialogTitle>
-                          <DialogDescription>Update the name of the state</DialogDescription>
+                          <DialogDescription>Update the name and short code of the state.</DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                           <div className="grid gap-2">
-                            <Label>State Name</Label>
+                            <Label>Name</Label>
                             <Input
                               value={editState.name}
                               onChange={(e) => setEditState({ ...editState, name: e.target.value })}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label>Short</Label>
+                            <Input
+                              value={editState.short}
+                              onChange={(e) => setEditState({ ...editState, short: e.target.value })}
                             />
                           </div>
                         </div>
